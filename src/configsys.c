@@ -96,6 +96,7 @@ static cfg_opt_t config_opts[] = {
     CFG_INT("timer_resolution", 200, CFGF_NONE),
     CFG_INT("auto_hide_time", 2000, CFGF_NONE),
     CFG_INT("on_last_terminal_exit", 0, CFGF_NONE),
+    CFG_BOOL("prompt_on_exit", FALSE, CFGF_NONE),
     CFG_INT("palette_scheme", 0, CFGF_NONE),
     CFG_INT("non_focus_pull_up_behaviour", 0, CFGF_NONE),
     CFG_INT("cursor_shape", 0, CFGF_NONE),
@@ -164,7 +165,7 @@ static cfg_opt_t config_opts[] = {
     CFG_BOOL("auto_hide_on_focus_lost", FALSE, CFGF_NONE),
     CFG_BOOL("auto_hide_on_mouse_leave", FALSE, CFGF_NONE),
     /* Whether we limit the length of a tab title */
-    CFG_BOOL("title_max_length_flag", TRUE, CFGF_NONE),
+    CFG_INT("title_max_length_flag", 2, CFGF_NONE),
     /* Whether to set a new tab's working dir to the current tab's */
     CFG_BOOL("inherit_working_dir", TRUE, CFGF_NONE),
     CFG_BOOL("command_login_shell", FALSE, CFGF_NONE),

@@ -563,10 +563,16 @@ static void window_title_change_all (tilda_window *tw)
         label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (tw->notebook), page);
 
         guint length = config_getint ("title_max_length");
-
-        if(config_getbool("title_max_length_flag") && strlen(title) > length) {
-            gchar *titleOffset = title + strlen(title) - length;
-            gchar *shortTitle = g_strdup_printf ("...%s", titleOffset);
+        guint title_length_flag = config_getint("title_max_length_flag");
+        if(title_length_flag && strlen(title) > length) {
+            gchar *shortTitle = NULL;
+            if(title_length_flag == 1) {
+                shortTitle = g_strdup_printf ("%.*s...", length, title);
+            }
+            else {
+                gchar *titleOffset = title + strlen(title) - length;
+                shortTitle = g_strdup_printf ("...%s", titleOffset);
+            }
             gtk_label_set_text (GTK_LABEL(label), shortTitle);
             g_free(shortTitle);
         } else {
@@ -843,18 +849,18 @@ static void combo_dynamically_set_title_changed_cb (GtkWidget *w, tilda_window *
     window_title_change_all (tw);
 }
 
-static void check_max_title_length_cb (GtkWidget *w, tilda_window *tw)
+static void combo_max_title_length_changed_cb (GtkWidget *w, tilda_window *tw)
 {
-    DEBUG_FUNCTION ("check_max_title_length_cb");
+    DEBUG_FUNCTION ("combo_max_title_length_changed_cb");
 
     GtkWidget *entry = GTK_WIDGET(
         gtk_builder_get_object (xml, ("spin_title_max_length"))
     );
-    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w))) {
-        config_setbool("title_max_length_flag", TRUE);
+    const gint status = gtk_combo_box_get_active (GTK_COMBO_BOX(w));
+    config_setint("title_max_length_flag", status);
+    if (status > 0) {
         gtk_editable_set_editable (GTK_EDITABLE(entry), TRUE);
     } else {
-        config_setbool("title_max_length_flag", FALSE);
         gtk_editable_set_editable (GTK_EDITABLE(entry), FALSE);
     }
 }
@@ -963,6 +969,13 @@ static void combo_on_last_terminal_exit_changed_cb (GtkWidget *w, tilda_window *
     const gint status = gtk_combo_box_get_active (GTK_COMBO_BOX(w));
 
     config_setint ("on_last_terminal_exit", status);
+}
+
+static void check_prompt_on_exit_toggled_cb (GtkWidget *w, tilda_window *tw)
+{
+    const gboolean prompt_on_exit = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
+
+    config_setbool("prompt_on_exit", prompt_on_exit);
 }
 
 static void entry_web_browser_changed (GtkWidget *w, tilda_window *tw) {
@@ -1993,17 +2006,17 @@ static void set_wizard_state_from_config (tilda_window *tw) {
     TEXT_ENTRY ("entry_title", "title");
     COMBO_BOX ("combo_dynamically_set_title", "d_set_title");
     // Whether to limit the length of the title
-    CHECK_BUTTON ("check_title_max_length", "title_max_length_flag");
+    COMBO_BOX ("combo_title_max_length", "title_max_length_flag");
     // The maximum length of the title
     SPIN_BUTTON_SET_RANGE ("spin_title_max_length", 0, 99999);
     SPIN_BUTTON_SET_VALUE ("spin_title_max_length", config_getint ("title_max_length"));
-    SET_SENSITIVE_BY_CONFIG_BOOL ("spin_title_max_length", "title_max_length_flag");
 
     CHECK_BUTTON ("check_run_custom_command", "run_command");
     TEXT_ENTRY ("entry_custom_command", "command");
     CHECK_BUTTON ("check_command_login_shell", "command_login_shell");
     COMBO_BOX ("combo_command_exit", "command_exit");
     COMBO_BOX ("combo_on_last_terminal_exit", "on_last_terminal_exit");
+    CHECK_BUTTON ("check_prompt_on_exit", "prompt_on_exit");
     SET_SENSITIVE_BY_CONFIG_BOOL ("entry_custom_command","run_command");
     SET_SENSITIVE_BY_CONFIG_BOOL ("label_custom_command", "run_command");
 
@@ -2159,11 +2172,12 @@ static void connect_wizard_signals (TildaWizard *wizard)
     CONNECT_SIGNAL ("check_auto_hide_on_mouse_leave","toggled",check_auto_hide_on_mouse_leave_toggled_cb, tw);
 
     CONNECT_SIGNAL ("combo_on_last_terminal_exit","changed",combo_on_last_terminal_exit_changed_cb, tw);
+    CONNECT_SIGNAL ("check_prompt_on_exit","toggled",check_prompt_on_exit_toggled_cb, tw);
 
     /* Title and Command Tab */
     CONNECT_SIGNAL ("entry_title","changed",entry_title_changed_cb, tw);
     CONNECT_SIGNAL ("combo_dynamically_set_title","changed",combo_dynamically_set_title_changed_cb, tw);
-    CONNECT_SIGNAL ("check_title_max_length","toggled",check_max_title_length_cb, tw);
+    CONNECT_SIGNAL ("combo_title_max_length","changed",combo_max_title_length_changed_cb, tw);
     CONNECT_SIGNAL ("spin_title_max_length","value-changed", spin_max_title_length_changed_cb, tw);
 
     CONNECT_SIGNAL ("check_run_custom_command","toggled",check_run_custom_command_toggled_cb, tw);
